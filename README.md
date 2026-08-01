@@ -12,32 +12,24 @@ substitutions (`kubectl` → `oc`), called out in [`docs/09-openshift-notes.md`]
 ## What you will build
 
 ```mermaid
-flowchart LR
-    subgraph "GitOps"
-        M[/Manifests in Git/]
-        A([ArgoCD])
-    end
-
-    subgraph "Minikube (or OpenShift)"
-        direction TB
-        S([Spark Operator<br/>CRD])
-        CR[/SparkApplication CR/]
-        D([Spark Driver Pod])
-        E([Executor Pods])
-    end
-
-    subgraph "Workflow & Notebooks"
-        W([Airflow DAG<br/>SparkKubernetesOperator])
-        N([Kubeflow Notebook])
-    end
+%%{init: { 'flowchart': { 'useMaxWidth': true } }}%%
+flowchart TD
+    M[/Manifests in Git/]
+    A([ArgoCD])
+    S([Spark Operator<br/>CRD])
+    CR[/SparkApplication CR/]
+    D([Spark Driver Pod])
+    E([Executor Pods])
+    W([Airflow DAG])
+    N([Kubeflow Notebook])
 
     M -->|GitOps| A
     A -->|syncs| S
     S -->|watches & reconciles| CR
     CR -->|creates| D
     D -->|spawns| E
-    W -->|submits SparkApplication CR| CR
-    N -->|interactive pyspark / CR submission| CR
+    W -->|submits CR| CR
+    N -->|submits CR| CR
 
     classDef git fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
     classDef argo fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
@@ -77,25 +69,32 @@ and Kubernetes manifests in [`manifests/`](manifests).
 ## Repository Layout
 
 ```mermaid
+%%{init: { 'flowchart': { 'useMaxWidth': true, 'nodeSpacing': 5, 'rankSpacing': 10, 'subgraphPadding': 0 } }}%%
 flowchart TB
-    R["sparkonkube/<br/>Root of the tutorial repository"]
-    R --> A["docs/<br/>Step-by-step written tutorial"]
-    R --> B["scripts/<br/>Automation scripts for each step"]
-    R --> C["manifests/<br/>Kubernetes manifests"]
-    R --> D["README.md<br/>you are here"]
+    R[sparkonkube/]
+    R --> A[docs/]
+    R --> B[scripts/]
+    R --> D[README.md]
+    R --> manifests
 
-    C --> C1["argocd/applications/<br/>ArgoCD Application definitions (GitOps)"]
-    C --> C2["spark-operator/<br/>Helm values for the Spark Operator"]
-    C --> C3["rbac/<br/>ServiceAccounts/Roles for driver & notebook"]
-    C --> C4["spark-jobs/<br/>Example SparkApplication CRs"]
-    C --> C5["notebook/<br/>Kubeflow Notebook CR for interactive Spark"]
-    C --> C6["airflow/dags/<br/>Airflow DAG(s) that submit SparkApplications"]
+    subgraph manifests["manifests/"]
+        direction TB
+        M1[argocd/applications/]
+        M2[spark-operator/]
+        M3[rbac/]
+        M4[spark-jobs/]
+        M5[notebook/]
+        M6[airflow/dags/]
+        M1 ~~~ M2 ~~~ M3 ~~~ M4 ~~~ M5 ~~~ M6
+    end
+
+    style manifests fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
 
     classDef root fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
     classDef dir fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
     classDef file fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
     class R root
-    class A,B,C,C1,C2,C3,C4,C5,C6 dir
+    class A,B,M1,M2,M3,M4,M5,M6 dir
     class D file
 ```
 
