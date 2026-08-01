@@ -11,30 +11,42 @@ substitutions (`kubectl` → `oc`), called out in [`docs/09-openshift-notes.md`]
 
 ## What you will build
 
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│                        Minikube (or OpenShift)                        │
-│                                                                         │
-│  ┌─────────┐  syncs   ┌──────────────────────┐                        │
-│  │ ArgoCD  │─────────▶│ Spark Operator (CRD) │                        │
-│  └─────────┘          └──────────────────────┘                        │
-│       ▲                         │ watches SparkApplication CRs        │
-│       │ GitOps                  ▼                                     │
-│  ┌─────────┐            ┌───────────────┐        ┌────────────────┐   │
-│  │Manifests│            │ Spark Driver  │──────▶ │ Executor Pod(s) │   │
-│  │ in Git  │            │     Pod       │        └────────────────┘   │
-│  └─────────┘            └───────┬───────┘                             │
-│                                  ▲                                     │
-│           submits SparkApplication CR                                 │
-│           ┌──────────────────────┴───────────────────────┐            │
-│           │                                               │            │
-│  ┌─────────────────┐                          ┌────────────────────┐  │
-│  │ Airflow DAG      │  (external workflow      │ Kubeflow Notebook  │  │
-│  │ (SparkKubernetes │   scheduler / orchestr.) │ (interactive       │  │
-│  │  Operator)       │                          │  pyspark / CR      │  │
-│  └─────────────────┘                          │  submission)        │  │
-│                                                 └────────────────────┘  │
-└───────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph "GitOps"
+        M[/Manifests in Git/]
+        A([ArgoCD])
+    end
+
+    subgraph "Minikube (or OpenShift)"
+        direction TB
+        S([Spark Operator<br/>CRD])
+        CR[/SparkApplication CR/]
+        D([Spark Driver Pod])
+        E([Executor Pods])
+    end
+
+    subgraph "Workflow & Notebooks"
+        W([Airflow DAG<br/>SparkKubernetesOperator])
+        N([Kubeflow Notebook])
+    end
+
+    M -->|GitOps| A
+    A -->|syncs| S
+    S -->|watches & reconciles| CR
+    CR -->|creates| D
+    D -->|spawns| E
+    W -->|submits SparkApplication CR| CR
+    N -->|interactive pyspark / CR submission| CR
+
+    classDef git fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef argo fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef spark fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef work fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    class M git
+    class A argo
+    class S,CR,D,E spark
+    class W,N work
 ```
 
 ## Prerequisites
@@ -64,18 +76,27 @@ and Kubernetes manifests in [`manifests/`](manifests).
 
 ## Repository Layout
 
-```
-sparkonopenshift/
-├── README.md                     <- you are here
-├── docs/                         <- step-by-step written tutorial
-├── scripts/                      <- automation scripts for each step
-└── manifests/
-    ├── argocd/applications/      <- ArgoCD Application definitions (GitOps)
-    ├── spark-operator/           <- Helm values for the Spark Operator
-    ├── rbac/                     <- ServiceAccounts/Roles for driver & notebook
-    ├── spark-jobs/               <- Example SparkApplication CRs
-    ├── notebook/                 <- Kubeflow Notebook CR for interactive Spark
-    └── airflow/dags/             <- Airflow DAG(s) that submit SparkApplications
+```mermaid
+flowchart TB
+    R["sparkonkube/<br/>Root of the tutorial repository"]
+    R --> A["docs/<br/>Step-by-step written tutorial"]
+    R --> B["scripts/<br/>Automation scripts for each step"]
+    R --> C["manifests/<br/>Kubernetes manifests"]
+    R --> D["README.md<br/>you are here"]
+
+    C --> C1["argocd/applications/<br/>ArgoCD Application definitions (GitOps)"]
+    C --> C2["spark-operator/<br/>Helm values for the Spark Operator"]
+    C --> C3["rbac/<br/>ServiceAccounts/Roles for driver & notebook"]
+    C --> C4["spark-jobs/<br/>Example SparkApplication CRs"]
+    C --> C5["notebook/<br/>Kubeflow Notebook CR for interactive Spark"]
+    C --> C6["airflow/dags/<br/>Airflow DAG(s) that submit SparkApplications"]
+
+    classDef root fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef dir fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef file fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    class R root
+    class A,B,C,C1,C2,C3,C4,C5,C6 dir
+    class D file
 ```
 
 ## Quick Start (TL;DR)
