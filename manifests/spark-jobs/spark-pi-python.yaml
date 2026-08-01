@@ -1,0 +1,26 @@
+# PySpark variant of the Pi example, useful when you want to demonstrate
+# submitting a Python application (mainApplicationFile instead of mainClass).
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: spark-pi-python
+  namespace: spark-jobs
+spec:
+  type: Python
+  mode: cluster
+  image: "docker.io/apache/spark:3.5.1"
+  imagePullPolicy: IfNotPresent
+  mainApplicationFile: "local:///opt/spark/examples/src/main/python/pi.py"
+  arguments:
+    - "1000"
+  sparkVersion: "3.5.1"
+  restartPolicy:
+    type: Never
+  driver:
+    cores: 1
+    memory: "512m"
+    serviceAccount: spark-driver
+  executor:
+    cores: 1
+    instances: 2
+    memory: "512m"

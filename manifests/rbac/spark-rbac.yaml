@@ -1,0 +1,82 @@
+# RBAC required for:
+#  1. The Spark *driver* pod's ServiceAccount to create/watch/delete
+#     executor pods and a headless Service for driver<->executor comms.
+#  2. External submitters (Kubeflow Notebook, Airflow worker) to create
+#     SparkApplication custom resources in the spark-jobs namespace.
+#
+# Apply this to every namespace where Spark drivers or submitters run:
+# spark-jobs, kubeflow, airflow.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spark-jobs
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spark-driver
+  namespace: spark-jobs
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: spark-driver-role
+  namespace: spark-jobs
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "persistentvolumeclaims"]
+    verbs: ["get", "watch", "list", "create", "delete", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list"]
+  - apiGroups: ["sparkoperator.k8s.io"]
+    resources: ["sparkapplications", "scheduledsparkapplications"]
+    verbs: ["get", "watch", "list", "create", "delete", "update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: spark-driver-rolebinding
+  namespace: spark-jobs
+subjects:
+  - kind: ServiceAccount
+    name: spark-driver
+    namespace: spark-jobs
+roleRef:
+  kind: Role
+  name: spark-driver-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ServiceAccount used by external submitters (Airflow worker pods,
+# Kubeflow Notebook pods) to create SparkApplication CRs in spark-jobs.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spark-submitter
+  namespace: spark-jobs
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: spark-submitter-rolebinding
+  namespace: spark-jobs
+subjects:
+  - kind: ServiceAccount
+    name: spark-submitter
+    namespace: spark-jobs
+  - kind: ServiceAccount
+    name: default
+    namespace: kubeflow
+  - kind: ServiceAccount
+    name: airflow-worker
+    namespace: airflow
+roleRef:
+  kind: Role
+  name: spark-driver-role
+  apiGroup: rbac.authorization.k8s.io

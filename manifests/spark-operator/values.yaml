@@ -1,0 +1,30 @@
+# Helm values for kubeflow/spark-operator
+# https://github.com/kubeflow/spark-operator
+
+# Watch all namespaces so the operator can manage SparkApplications
+# submitted from spark-jobs, kubeflow (notebooks), and airflow namespaces.
+spark:
+  jobNamespaces:
+    - ""   # empty string == watch all namespaces
+
+sparkJobNamespace: ""
+
+webhook:
+  enable: true
+
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Expose Prometheus metrics (optional, useful for observing driver/executor
+# scheduling behavior).
+prometheus:
+  metrics:
+    enable: true
+    port: 10254

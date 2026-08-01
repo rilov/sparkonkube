@@ -1,0 +1,41 @@
+# A Kubeflow Notebook (Jupyter) custom resource pre-loaded with PySpark and
+# the ServiceAccount needed to submit SparkApplication CRs directly from
+# notebook cells (see docs/06-kubeflow-notebook-spark.md).
+apiVersion: kubeflow.org/v1
+kind: Notebook
+metadata:
+  name: spark-notebook
+  namespace: kubeflow
+  labels:
+    notebook-name: spark-notebook
+spec:
+  template:
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: spark-notebook
+          image: jupyter/pyspark-notebook:spark-3.5.1
+          resources:
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          env:
+            - name: NB_PREFIX
+              value: /
+          ports:
+            - containerPort: 8888
+              name: notebook-port
+              protocol: TCP
+          command: ["start-notebook.sh"]
+          args:
+            - "--NotebookApp.token=''"
+            - "--NotebookApp.base_url=/"
+          volumeMounts:
+            - name: workspace
+              mountPath: /home/jovyan/work
+      volumes:
+        - name: workspace
+          emptyDir: {}

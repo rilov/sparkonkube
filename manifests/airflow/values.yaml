@@ -1,0 +1,43 @@
+# Minimal Helm values for the official apache-airflow/airflow chart,
+# sized for Minikube and configured to mount our example DAG.
+executor: "KubernetesExecutor"
+
+images:
+  airflow:
+    repository: apache/airflow
+    tag: 2.9.3
+
+# Mount the DAG ConfigMap created by scripts/05-install-airflow.sh
+dags:
+  gitSync:
+    enabled: false
+  persistence:
+    enabled: false
+
+extraVolumes:
+  - name: dags-configmap
+    configMap:
+      name: airflow-dags
+
+extraVolumeMounts:
+  - name: dags-configmap
+    mountPath: /opt/airflow/dags
+
+webserver:
+  defaultUser:
+    enabled: true
+    username: admin
+    password: admin
+
+workers:
+  serviceAccount:
+    create: true
+    name: airflow-worker
+
+scheduler:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+
+webserverSecretKeySecretName: ""

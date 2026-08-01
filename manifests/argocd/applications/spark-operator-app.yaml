@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spark-operator
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://kubeflow.github.io/spark-operator
+    chart: spark-operator
+    targetRevision: "*"
+    helm:
+      valueFiles:
+        - values.yaml
+      # NOTE: ArgoCD reads Helm values from the chart repo by default.
+      # To use manifests/spark-operator/values.yaml from THIS git repo,
+      # replace this `source` block with a multi-source Application, e.g.:
+      #
+      # sources:
+      #   - repoURL: https://kubeflow.github.io/spark-operator
+      #     chart: spark-operator
+      #     targetRevision: "*"
+      #     helm:
+      #       valueFiles:
+      #         - $values/manifests/spark-operator/values.yaml
+      #   - repoURL: https://github.com/rilov/sparkonopenshift.git
+      #     targetRevision: main
+      #     ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: spark-operator
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

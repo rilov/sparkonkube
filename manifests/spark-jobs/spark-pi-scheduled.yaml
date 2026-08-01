@@ -1,0 +1,33 @@
+# Demonstrates the Spark Operator's OWN cron-style scheduling primitive
+# (ScheduledSparkApplication), independent of Airflow. Useful to contrast
+# with docs/07-airflow-orchestration.md, which shows external orchestration.
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: ScheduledSparkApplication
+metadata:
+  name: spark-pi-scheduled
+  namespace: spark-jobs
+spec:
+  schedule: "*/15 * * * *"   # every 15 minutes
+  concurrencyPolicy: Forbid  # don't overlap runs
+  successfulRunHistoryLimit: 3
+  failedRunHistoryLimit: 1
+  template:
+    type: Scala
+    mode: cluster
+    image: "docker.io/apache/spark:3.5.1"
+    imagePullPolicy: IfNotPresent
+    mainClass: org.apache.spark.examples.SparkPi
+    mainApplicationFile: "local:///opt/spark/examples/jars/spark-examples_2.12-3.5.1.jar"
+    arguments:
+      - "1000"
+    sparkVersion: "3.5.1"
+    restartPolicy:
+      type: Never
+    driver:
+      cores: 1
+      memory: "512m"
+      serviceAccount: spark-driver
+    executor:
+      cores: 1
+      instances: 2
+      memory: "512m"

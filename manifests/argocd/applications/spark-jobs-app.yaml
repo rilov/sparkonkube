@@ -1,0 +1,22 @@
+# Manages the SparkApplication / ScheduledSparkApplication CRs and RBAC in
+# manifests/spark-jobs and manifests/rbac via GitOps.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spark-jobs
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/rilov/sparkonopenshift.git
+    targetRevision: main
+    path: manifests/spark-jobs
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: spark-jobs
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

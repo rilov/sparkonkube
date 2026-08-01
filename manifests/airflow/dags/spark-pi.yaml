@@ -1,0 +1,29 @@
+# Copy of manifests/spark-jobs/spark-pi.yaml, bundled alongside the DAG so
+# SparkKubernetesOperator(application_file="spark-pi.yaml") can find it
+# relative to the DAGs folder inside the Airflow scheduler/worker pods.
+# Keep this file in sync with manifests/spark-jobs/spark-pi.yaml.
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: spark-pi-airflow
+  namespace: spark-jobs
+spec:
+  type: Scala
+  mode: cluster
+  image: "docker.io/apache/spark:3.5.1"
+  imagePullPolicy: IfNotPresent
+  mainClass: org.apache.spark.examples.SparkPi
+  mainApplicationFile: "local:///opt/spark/examples/jars/spark-examples_2.12-3.5.1.jar"
+  arguments:
+    - "1000"
+  sparkVersion: "3.5.1"
+  restartPolicy:
+    type: Never
+  driver:
+    cores: 1
+    memory: "512m"
+    serviceAccount: spark-driver
+  executor:
+    cores: 1
+    instances: 2
+    memory: "512m"

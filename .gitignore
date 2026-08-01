@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and temporary files
+*.log
+tmp/
+
+# Local Kubernetes artifacts (e.g. downloaded kubeconfigs, minikube state)
+kubeconfig*
+.minikube/
+
+# Helm dependency / release artifacts
+charts/
+*.tgz
